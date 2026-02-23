@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react';
 import { createExpense, updateExpense } from '../api/expenses';
+import { CATEGORIES } from '../constants';
 import './ExpenseForm.css';
 
-const CATEGORIES = ['Food', 'Transport', 'Shopping', 'Bills', 'Health', 'Entertainment', 'Other'];
-
 export default function ExpenseForm({ onSuccess, editingId, expenses, onCancelEdit }) {
-  const editing = expenses.find((e) => e._id === editingId);
+  const editing = expenses.find((e) => e.id === editingId);
   const [title, setTitle] = useState('');
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState(CATEGORIES[0]);

@@ -1,0 +1,16 @@
+[
+  {
+    "id": "b8718390-927a-429b-824f-e8fda752b27e",
+    "title": "asdsa",
+    "amount": 1,
+    "category": "Food",
+    "date": "2026-02-23T00:00:00.000Z"
+  },
+  {
+    "id": "4ca046dc-d63d-48fd-a9b6-59ed40b9f382",
+    "title": "2w",
+    "amount": 123,
+    "category": "Food",
+    "date": "2026-02-23T00:00:00.000Z"
+  }
+]

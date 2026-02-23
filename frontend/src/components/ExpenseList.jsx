@@ -33,11 +33,11 @@ export default function ExpenseList({ expenses, onEdit, onDelete, amountHigh, am
       <ul className="expense-list-ul">
         {expenses.map((expense) => (
           <ExpenseItem
-            key={expense._id}
+            key={expense.id}
             expense={expense}
             amountClass={getAmountClass(expense.amount)}
-            onEdit={() => onEdit(expense._id)}
-            onDelete={() => handleDelete(expense._id)}
+            onEdit={() => onEdit(expense.id)}
+            onDelete={() => handleDelete(expense.id)}
           />
         ))}
       </ul>
