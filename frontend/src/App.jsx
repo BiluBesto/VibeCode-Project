@@ -20,9 +20,9 @@ function App() {
     setError(null);
     try {
       const data = await fetchExpenses();
-      setExpenses(data);
+      setExpenses(Array.isArray(data) ? data : []);
     } catch (err) {
-      setError(err.message || 'Could not load expenses. Is the backend running?');
+      setError(err.message || 'Could not load expenses from storage.');
       setExpenses([]);
     } finally {
       setLoading(false);

@@ -1,64 +1,85 @@
-const API_BASE = '/api/expenses';
+const STORAGE_KEY = 'expense-tracker:expenses';
 
-async function parseJsonSafe(res) {
+function readFromStorage() {
+  if (typeof window === 'undefined') return [];
   try {
-    return await res.json();
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
   } catch {
-    return null;
+    return [];
   }
 }
 
-function extractErrorMessage(data, fallback) {
-  if (!data) return fallback;
-  if (Array.isArray(data.errors) && data.errors.length > 0) {
-    return data.errors.join(' ');
+function writeToStorage(expenses) {
+  if (typeof window === 'undefined') return;
+  try {
+    const normalized = Array.isArray(expenses) ? expenses : [];
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
+  } catch {
+    // Ignore storage errors to avoid breaking the UI.
   }
-  if (typeof data.error === 'string' && data.error) {
-    return data.error;
+}
+
+function generateId() {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
   }
-  return fallback;
+  return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
 export async function fetchExpenses() {
-  const res = await fetch(API_BASE);
-  const data = await parseJsonSafe(res);
-  if (!res.ok) {
-    throw new Error(extractErrorMessage(data, 'Failed to fetch expenses'));
-  }
-  return Array.isArray(data) ? data : [];
+  const expenses = readFromStorage();
+  return Array.isArray(expenses) ? expenses : [];
 }
 
 export async function createExpense(expense) {
-  const res = await fetch(API_BASE, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(expense),
-  });
-  const data = await parseJsonSafe(res);
-  if (!res.ok) {
-    throw new Error(extractErrorMessage(data, 'Failed to create expense'));
-  }
-  return data;
+  const expenses = readFromStorage();
+  const now = new Date().toISOString();
+  const newExpense = {
+    id: generateId(),
+    title: String(expense.title ?? '').trim(),
+    amount: Number(expense.amount ?? 0),
+    category: String(expense.category ?? '').trim(),
+    date: expense.date || now,
+  };
+  const next = [...expenses, newExpense];
+  writeToStorage(next);
+  return newExpense;
 }
 
 export async function updateExpense(id, expense) {
-  const res = await fetch(`${API_BASE}/${id}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(expense),
-  });
-  const data = await parseJsonSafe(res);
-  if (!res.ok) {
-    throw new Error(extractErrorMessage(data, 'Failed to update expense'));
+  const expenses = readFromStorage();
+  const index = expenses.findIndex((e) => e.id === id);
+  if (index === -1) {
+    throw new Error('Expense not found');
   }
-  return data;
+
+  const current = expenses[index];
+  const updated = {
+    ...current,
+    ...expense,
+    title: String(expense.title ?? current.title ?? '').trim(),
+    amount: Number(expense.amount ?? current.amount ?? 0),
+    category: String(expense.category ?? current.category ?? '').trim(),
+    date: expense.date || current.date,
+    id,
+  };
+
+  const next = [...expenses];
+  next[index] = updated;
+  writeToStorage(next);
+  return updated;
 }
 
 export async function deleteExpense(id) {
-  const res = await fetch(`${API_BASE}/${id}`, { method: 'DELETE' });
-  const data = await parseJsonSafe(res);
-  if (!res.ok) {
-    throw new Error(extractErrorMessage(data, 'Failed to delete expense'));
+  const expenses = readFromStorage();
+  const index = expenses.findIndex((e) => e.id === id);
+  if (index === -1) {
+    throw new Error('Expense not found');
   }
-  return data;
+  const next = expenses.filter((e) => e.id !== id);
+  writeToStorage(next);
+  return { message: 'Expense deleted.', id };
 }
